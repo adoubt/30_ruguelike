@@ -14,7 +14,7 @@ class Joystick {
         this.joystick.style.width = '100px';
         this.joystick.style.height = '100px';
         this.joystick.style.borderRadius = '50%';
-        this.joystick.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+        this.joystick.style.backgroundColor = 'rgba(245, 6, 229, 0.3)';
         this.joystick.style.bottom = '50px';
         this.joystick.style.left = '50px';
         document.body.appendChild(this.joystick);
