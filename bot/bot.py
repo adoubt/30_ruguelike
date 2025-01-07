@@ -1,7 +1,9 @@
 from aiogram import Bot, Dispatcher, executor, types
-
-API_TOKEN = "7645895737:AAGWtuvw7HIjHi5KaORJLLOhJA9b7akXgc0"
-WEB_APP_URL = "https://your-domain.com"  # URL игры
+from dotenv import load_dotenv
+import os
+load_dotenv()
+API_TOKEN = os.getenv('API_TOKEN')
+WEB_APP_URL = "https://adoubt.github.io/30_ruguelike/"  # URL игры
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
