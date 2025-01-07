@@ -1,9 +1,13 @@
 var player;
-var joystick;
+var joystickElem;
+var joystickContainer;
+var isMouseDown = false;
+var joystickPosition = { x: 0, y: 0 };
+
 var gameConfig = {
     type: Phaser.AUTO,
     width: 800,
-    height: 600,
+    height: 800,
     parent: 'game-container',
     scene: {
         preload: preload,
@@ -21,10 +25,7 @@ var gameConfig = {
 
 var game = new Phaser.Game(gameConfig);
 
-var joystickPosition = { x: 0, y: 0 };  // Хранение текущей позиции джойстика
-
 function preload() {
-    // Загрузить изображения
     this.load.image('player', 'assets/player.png');
 }
 
@@ -33,74 +34,81 @@ function create() {
     player = this.physics.add.sprite(400, 300, 'player');
     player.setCollideWorldBounds(true);
 
-    // Слушатель событий для джойстика
-    const joystickElem = document.getElementById('joystick');
+    // Слушаем клики и касания по всему игровому контейнеру
+    this.input.on('pointerdown', startJoystickMove, this);
+    this.input.on('pointermove', moveJoystick, this);
+    this.input.on('pointerup', stopJoystickMove, this);
 
-    joystickElem.addEventListener('mousedown', startJoystickMove);
-    joystickElem.addEventListener('touchstart', startJoystickMove);
-    window.addEventListener('mousemove', moveJoystick);
-    window.addEventListener('touchmove', moveJoystick);
-    window.addEventListener('mouseup', stopJoystickMove);
-    window.addEventListener('touchend', stopJoystickMove);
+    // Создаем контейнер для джойстика, но не привязываем его к игровому полю
+    joystickContainer = document.createElement('div');
+    joystickContainer.id = 'joystick-container';
+    document.body.appendChild(joystickContainer);
+    
+    joystickContainer.style.position = 'absolute';
+    joystickContainer.style.width = '12%';
+    joystickContainer.style.height = '12%';
+    joystickContainer.style.borderRadius = '50%';
+    joystickContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+    
+    // Джойстик внутри контейнера
+    joystickElem = document.createElement('div');
+    joystickElem.id = 'joystick';
+    joystickElem.style.width = '70%';
+    joystickElem.style.height = '70%';
+    joystickElem.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+    joystickElem.style.borderRadius = '50%';
+    joystickElem.style.position = 'absolute';
+    joystickContainer.appendChild(joystickElem);
 }
 
 function update() {
-    // Двигаем игрока на основе позиции джойстика
-    const speed = 5;
-    player.x += joystickPosition.x * speed;
-    player.y += joystickPosition.y * speed;
+    // Перемещение игрока в зависимости от джойстика
+    if (isMouseDown) {
+        const speed = 5;
+        player.x += joystickPosition.x * speed;
+        player.y += joystickPosition.y * speed;
+    }
 }
 
-function startJoystickMove(event) {
-    // Начало перемещения джойстика
-    event.preventDefault();  // Отключаем стандартное поведение
-    joystickPosition = getJoystickDirection(event);
+function startJoystickMove(pointer) {
+    // Когда происходит клик или касание, устанавливаем позицию контейнера джойстика
+    const containerX = pointer.x - joystickContainer.offsetWidth / 2;
+    const containerY = pointer.y - joystickContainer.offsetHeight / 2;
+    
+    joystickContainer.style.left = `${containerX}px`;
+    joystickContainer.style.top = `${containerY}px`;
+    
+    isMouseDown = true;
+    joystickPosition = { x: 0, y: 0 }; // Сброс позиции джойстика
 }
 
-function moveJoystick(event) {
-    // Обновляем направление джойстика во время движения
-    event.preventDefault();
-    if (joystickPosition) {
-        joystickPosition = getJoystickDirection(event);
-        updateJoystickUI(joystickPosition);
+function moveJoystick(pointer) {
+    if (isMouseDown) {
+        // Расстояние от центра контейнера
+        const joystickCenter = {
+            x: joystickContainer.offsetLeft + joystickContainer.offsetWidth / 2,
+            y: joystickContainer.offsetTop + joystickContainer.offsetHeight / 2
+        };
+
+        const dx = pointer.x - joystickCenter.x;
+        const dy = pointer.y - joystickCenter.y;
+
+        const maxDistance = joystickContainer.offsetWidth / 2;
+        const distance = Math.min(Math.sqrt(dx * dx + dy * dy), maxDistance);
+        const angle = Math.atan2(dy, dx);
+
+        const x = distance / maxDistance * Math.cos(angle);
+        const y = distance / maxDistance * Math.sin(angle);
+
+        joystickPosition = { x, y };
+
+        // Обновляем позицию джойстика внутри контейнера
+        joystickElem.style.transform = `translate(${x * 50}px, ${y * 50}px)`;
     }
 }
 
 function stopJoystickMove() {
-    // Останавливаем джойстик
+    isMouseDown = false;
     joystickPosition = { x: 0, y: 0 };
-    updateJoystickUI(joystickPosition);
-}
-
-function getJoystickDirection(event) {
-    // Получаем координаты и конвертируем их в координаты джойстика
-    const joystickElem = document.getElementById('joystick');
-    const joystickContainer = document.getElementById('joystick-container');
-    const joystickCenter = {
-        x: joystickContainer.offsetLeft + joystickContainer.offsetWidth / 2,
-        y: joystickContainer.offsetTop + joystickContainer.offsetHeight / 2
-    };
-
-    const mouseX = event.touches ? event.touches[0].clientX : event.clientX;
-    const mouseY = event.touches ? event.touches[0].clientY : event.clientY;
-
-    const dx = mouseX - joystickCenter.x;
-    const dy = mouseY - joystickCenter.y;
-
-    const maxDistance = joystickContainer.offsetWidth / 2;
-
-    // Нормализуем значения
-    const distance = Math.min(Math.sqrt(dx * dx + dy * dy), maxDistance);
-    const angle = Math.atan2(dy, dx);
-
-    const x = distance / maxDistance * Math.cos(angle);
-    const y = distance / maxDistance * Math.sin(angle);
-
-    return { x, y };
-}
-
-function updateJoystickUI(position) {
-    // Обновляем стиль джойстика
-    const joystickElem = document.getElementById('joystick');
-    joystickElem.style.transform = `translate(${position.x * 50}px, ${position.y * 50}px)`;
+    joystickElem.style.transform = 'translate(0, 0)';
 }
