@@ -1,6 +1,6 @@
 from aiogram import Bot, Dispatcher, executor, types
 
-API_TOKEN = "YOUR_BOT_TOKEN"
+API_TOKEN = "7645895737:AAGWtuvw7HIjHi5KaORJLLOhJA9b7akXgc0"
 WEB_APP_URL = "https://your-domain.com"  # URL игры
 
 bot = Bot(token=API_TOKEN)
